@@ -31,14 +31,16 @@ def check_credit_limit(current_credits: int, new_credits: int) -> bool:
         raise ValueError("Invalid current credits")
     if not 1 <= new_credits <= 4:
         raise ValueError("Invalid course credits")
-    return current_credits + new_credits < 18
+    # FIXED: Changed < 18 to <= 18 (Issue #1)
+    return current_credits + new_credits <= 18
 
 
 def prerequisites_satisfied(completed: set[str], required: set[str]) -> bool:
     """Return whether the completed-course record meets prerequisites."""
     if not required:
         return True
-    return bool(completed.intersection(required))
+    # FIXED: Changed intersection to issubset (Issue #3)
+    return required.issubset(completed)
 
 
 def registration_decision(student: Student, course: Course) -> str:
@@ -47,7 +49,8 @@ def registration_decision(student: Student, course: Course) -> str:
         raise ValueError("Invalid dues")
     if not 0 <= course.enrolled <= course.capacity or course.capacity < 1:
         raise ValueError("Invalid capacity or enrollment")
-    if student.outstanding_dues > 1000:
+    # FIXED: Changed > 1000 to > 0 (Issue #2)
+    if student.outstanding_dues > 0:
         return "DUES_BLOCK"
     if course.code in student.registered_courses:
         return "ALREADY_REGISTERED"
@@ -55,7 +58,8 @@ def registration_decision(student: Student, course: Course) -> str:
         return "PREREQUISITES_MISSING"
     if not check_credit_limit(student.current_credits, course.credit_hours):
         return "CREDIT_LIMIT"
-    if course.enrolled > course.capacity:
+    # FIXED: Changed > to >= (Issue #4)
+    if course.enrolled >= course.capacity:
         return "WAITLISTED"
     return "REGISTERED"
 
@@ -78,4 +82,6 @@ def withdraw_course(student: Student, course: Course) -> bool:
         return False
     student.registered_courses.remove(course.code)
     student.current_credits -= course.credit_hours
+    # FIXED: Added decrement for enrollment (Issue #5)
+    course.enrolled -= 1
     return True
